@@ -6,14 +6,14 @@ module.exports = class SSHHelper
   constructor: (@user, @host, @port, @key) ->
 
   writeKeyFile: (callback) -> # callback(err, sshArgs, deleteKeyFile)
-    tmp.file (err, path, fd) =>
+    tmp.tmpName (err, path) =>
       if err
-        callback(err)
+        callback err
         return
-      b = new Buffer(@key)
-      fs.write fd, b, 0, b.length, 0, (err, written, buffer) =>
+      fs.writeFile path, @key, (err) =>
         if err
-          fs.unlink path, -> callback(err)
+          fs.unlink path, ->
+            callback err
           return
         sshArgs = [
           '-i', path
@@ -28,19 +28,19 @@ module.exports = class SSHHelper
         deleteKeyFile = (callback) ->
           fs.unlink path, ->
             callback?()
-        callback(null, sshArgs, deleteKeyFile)
+        callback null, sshArgs, deleteKeyFile
 
   execCommand: (command, callback) -> # callback(err, stdout, stderr)
     this.writeKeyFile (err, sshArgs, deleteKeyFile) ->
       if err
-        callback(err)
+        callback err
         return
       sshArgs.push("export LC_ALL=en_US.UTF-8; #{command}")
       try
         childProcess.execFile '/usr/bin/ssh', sshArgs, timeout: 20000, (err, stdout, stderr) ->
           deleteKeyFile ->
-            callback(err, stdout, stderr)
+            callback err, stdout, stderr
       catch err
         deleteKeyFile ->
-          callback(err)
+          callback err
 

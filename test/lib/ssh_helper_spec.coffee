@@ -15,43 +15,39 @@ describe 'SSHHelper', ->
     context 'when temp file failed to get created', ->
       beforeEach ->
         err = new Error
-        sinon.stub tmp, 'file', (cb) ->
-          cb(err)
+        sinon.stub tmp, 'tmpName'
+        tmp.tmpName.yields err
         cbSpy = sinon.spy()
         sshHelper.writeKeyFile cbSpy
 
       afterEach ->
-        tmp.file.restore()
+        tmp.tmpName.restore()
 
       it 'makes a callback with the error', ->
         expect(cbSpy).to.have.been.calledWith err
 
     context 'when temp file is successfully created', ->
-      fakeFd = null
-
       beforeEach ->
         err = new Error
-        fakeFd = {}
-        sinon.stub tmp, 'file', (cb) ->
-          cb null, '/tmp/tmpfile', fakeFd
-        sinon.stub fs, 'unlink', (path, cb) ->
-          cb()
+        sinon.stub tmp, 'tmpName'
+        tmp.tmpName.yields null, '/tmp/tmpfile'
+        sinon.stub fs, 'unlink'
+        fs.unlink.callsArg 1
 
       afterEach ->
-        tmp.file.restore()
+        tmp.tmpName.restore()
         fs.unlink.restore()
 
       context 'when the key failed to be written to the temp file', ->
         beforeEach ->
-          fs.write = sinon.stub fs, 'write', (fd, buf, offset, len, pos, cb) ->
-            expect(fd).to.equal fakeFd
-            cb err
+          sinon.stub fs, 'writeFile'
+          fs.writeFile.callsArgWith 2, err
           cbSpy = sinon.spy()
           sshHelper.writeKeyFile cbSpy
-          expect(fs.write).to.have.been.called
+          expect(fs.writeFile).to.have.been.calledWith '/tmp/tmpfile', sshHelper.key
 
         afterEach ->
-          fs.write.restore()
+          fs.writeFile.restore()
 
         it 'deletes the temp file', ->
           expect(fs.unlink).to.have.been.called
@@ -62,17 +58,16 @@ describe 'SSHHelper', ->
 
       context 'when the key is successfully written to the temp file', ->
         beforeEach ->
-          fs.write = sinon.stub fs, 'write', (fd, buf, offset, len, pos, cb) ->
-            expect(fd).to.equal fakeFd
-            cb()
+          sinon.stub fs, 'writeFile'
+          fs.writeFile.callsArg 2
           cbSpy = sinon.spy()
           sshHelper.writeKeyFile cbSpy
-          expect(fs.write).to.have.been.called
 
         afterEach ->
-          fs.write.restore()
+          fs.writeFile.restore()
 
         it 'makes a callback with ssh arguments as the first argument', ->
+          expect(fs.writeFile).to.have.been.calledWith '/tmp/tmpfile', sshHelper.key
           expect(cbSpy).to.have.been.called
           sshArgs = cbSpy.args[0][1].join ' '
           expect(sshArgs).to.match /^-i \/tmp\/tmpfile/
