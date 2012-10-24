@@ -15,13 +15,13 @@ describe 'SSHHelper', ->
     context 'when temp file failed to get created', ->
       beforeEach ->
         err = new Error
-        sinon.stub tmp, 'tmpName'
-        tmp.tmpName.yields err
+        sinon.stub tmp, 'file'
+        tmp.file.yields err
         cbSpy = sinon.spy()
         sshHelper.writeKeyFile cbSpy
 
       afterEach ->
-        tmp.tmpName.restore()
+        tmp.file.restore()
 
       it 'makes a callback with the error', ->
         expect(cbSpy).to.have.been.calledWith err
@@ -29,13 +29,13 @@ describe 'SSHHelper', ->
     context 'when temp file is successfully created', ->
       beforeEach ->
         err = new Error
-        sinon.stub tmp, 'tmpName'
-        tmp.tmpName.yields null, '/tmp/tmpfile'
+        sinon.stub tmp, 'file'
+        tmp.file.yields null, '/tmp/tmpfile'
         sinon.stub fs, 'unlink'
         fs.unlink.callsArg 1
 
       afterEach ->
-        tmp.tmpName.restore()
+        tmp.file.restore()
         fs.unlink.restore()
 
       context 'when the key failed to be written to the temp file', ->
