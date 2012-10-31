@@ -11,6 +11,7 @@ module.exports = actionCipher =
   decrypt: (key, iv, encrypted) ->
     key = crypto.createHash('sha256').update(key).digest 'binary'
     iv = new Buffer iv, 'base64'
+    encrypted = new Buffer encrypted, 'base64'
     aes = crypto.createDecipheriv 'AES-256-CBC', key, iv
-    aes.update(encrypted, 'base64', 'utf8') + aes.final('utf8')
+    aes.update(encrypted, 'binary', 'utf8') + aes.final('utf8')
 
