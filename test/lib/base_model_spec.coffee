@@ -1,5 +1,6 @@
 BaseModel = actionBase.BaseModel
 pg = require('pg').native
+async = require 'async'
 
 describe 'BaseModel', ->
   describe 'constructor', ->
@@ -9,7 +10,7 @@ describe 'BaseModel', ->
       expect(model.bar).to.equal 'B@R'
       expect(model.baz).to.equal 123
 
-  describe '.findOne', ->
+  describe '.findMany', ->
     context 'when tableName property is defined', ->
       before (done) ->
         pg.connect (err, client) ->
@@ -45,9 +46,9 @@ describe 'BaseModel', ->
           pg.connect.restore()
 
         it 'calls callback with error', (done) ->
-          BaseModel.findOne 'id = $1', [123], (err, model) ->
+          BaseModel.findMany 'id = $1', [123], (err, models) ->
             expect(err).to.equal error
-            expect(model).to.be.null
+            expect(models).to.be.null
             done()
 
       context 'when pg.connect is successful', ->
@@ -66,49 +67,61 @@ describe 'BaseModel', ->
             pg.connect.restore()
 
           it 'calls callback with error', (done) ->
-            BaseModel.findOne 'id = $1', [123], (err, model) ->
+            BaseModel.findMany 'id = $1', [123], (err, models) ->
               expect(err).to.equal error
-              expect(model).to.be.null
+              expect(models).to.be.null
               done()
 
-        context 'when a row with a given id does not exist', ->
+        context 'when a row that matches a given condition does not exist', ->
           it 'returns a null object', (done) ->
-            BaseModel.findOne 'id = $1', [123], (err, model) ->
+            BaseModel.findMany 'id = $1', [123], (err, models) ->
               expect(err).to.be.null
-              expect(model).to.be.null
+              expect(models).to.be.null
               done()
 
-        context 'when a row with a given id exists', ->
+        context 'when rows that matches a given condition exists', ->
           before (done) ->
             pg.connect (err, client) ->
               throw err if err
-              client.query 'INSERT INTO "test_table" (id, foo, bar) VALUES ($1, $2, $3)', [123, 'test', 42], (err, res) ->
-                throw err if err
-                done()
+              async.series [
+                (cb) -> client.query 'INSERT INTO "test_table" (id, foo, bar) VALUES ($1, $2, $3)', [1, 'test1', 42], cb
+                (cb) -> client.query 'INSERT INTO "test_table" (id, foo, bar) VALUES ($1, $2, $3)', [2, 'test2', 999], cb
+                (cb) -> client.query 'INSERT INTO "test_table" (id, foo, bar) VALUES ($1, $2, $3)', [3, 'test3', 42], cb
+              ], -> done()
 
           after (done) ->
             pg.connect (err, client) ->
               throw err if err
-              client.query 'DELETE FROM "test_table" WHERE id = $1', [123], (err, res) ->
+              client.query 'DELETE FROM "test_table"', (err, res) ->
                 throw err if err
                 done()
 
           context 'when columns are not specified', ->
             it 'fetches a row with given id and returns a model object with all attributes', (done) ->
-              BaseModel.findOne 'id = $1', [123], (err, model) ->
-                expect(model).to.be.an.instanceof BaseModel
-                expect(model.id).to.equal 123
-                expect(model.foo).to.equal 'test'
-                expect(model.bar).to.equal 42
+              BaseModel.findMany 'bar = $1', [42], (err, models) ->
+                expect(models).to.have.length 2
+                expect(models[0]).to.be.an.instanceof BaseModel
+                expect(models[0].id).to.equal 1
+                expect(models[0].foo).to.equal 'test1'
+                expect(models[0].bar).to.equal 42
+                expect(models[1]).to.be.an.instanceof BaseModel
+                expect(models[1].id).to.equal 3
+                expect(models[1].foo).to.equal 'test3'
+                expect(models[1].bar).to.equal 42
                 done()
 
           context 'when columns are specified', ->
             it 'fetches a row with given id and returns a model object with specified attributes + id', (done) ->
-              BaseModel.findOne 'id = $1', [123], ['foo'], (err, model) ->
-                expect(model).to.be.an.instanceof BaseModel
-                expect(model.id).to.equal 123
-                expect(model.foo).to.equal 'test'
-                expect(model).not.to.have.property 'bar'
+              BaseModel.findMany 'bar = $1', [42], ['foo'], (err, models) ->
+                expect(models).to.have.length 2
+                expect(models[0]).to.be.an.instanceof BaseModel
+                expect(models[0].id).to.equal 1
+                expect(models[0].foo).to.equal 'test1'
+                expect(models[0]).not.to.have.property 'bar'
+                expect(models[1]).to.be.an.instanceof BaseModel
+                expect(models[1].id).to.equal 3
+                expect(models[1].foo).to.equal 'test3'
+                expect(models[1]).not.to.have.property 'bar'
                 done()
 
     context 'when tableName property is not defined', ->
@@ -116,11 +129,47 @@ describe 'BaseModel', ->
         delete BaseModel.tableName
 
       it 'calls callback with error', (done) ->
-        BaseModel.findOne 'id = $1', [123], (err, model) ->
+        BaseModel.findMany 'id = $1', [123], (err, model) ->
           expect(err).to.be.an.instanceof Error
           expect(err.message).to.match /tableName/
           expect(model).to.be.null
           done()
+
+  describe '.findByOne', ->
+    cbSpy = null
+
+    beforeEach ->
+      sinon.stub BaseModel, 'findMany'
+      cbSpy = sinon.spy()
+
+    afterEach ->
+      BaseModel.findMany.restore()
+
+    it 'calls findMany with LIMIT 1 appended to condition', ->
+      BaseModel.findOne 'id = $1', [123], ['foo', 'bar'], cbSpy
+      expect(BaseModel.findMany).to.have.been.calledWith 'id = $1 LIMIT 1', [123], ['foo', 'bar']
+
+    context 'when findMany invokes callback with an error', ->
+      error = null
+
+      beforeEach ->
+        error = new Error 'some-error'
+        BaseModel.findMany.yields error
+
+      it 'also invokes callback with error', ->
+        BaseModel.findOne 'id = $1', [123], ['foo', 'bar'], cbSpy
+        expect(cbSpy).to.have.been.calledWith error
+
+    context 'when findMany invokes callback with a result', ->
+      res = null
+
+      beforeEach ->
+        res = new BaseModel
+        BaseModel.findMany.yields null, [res]
+
+      it 'invokes callback with the the first item in the result', ->
+        BaseModel.findOne 'id = $1', [123], ['foo', 'bar'], cbSpy
+        expect(cbSpy).to.have.been.calledWith null, res
 
   describe '.findById', ->
     cbSpy = null

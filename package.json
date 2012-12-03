@@ -16,6 +16,7 @@
   , "sinon"        : "1.4.x"
   , "chai"         : "1.2.x"
   , "sinon-chai"   : "2.1.x"
+  , "async"        : "0.1.x"
   }
 , "engines": {
     "node"         : "0.8.x"

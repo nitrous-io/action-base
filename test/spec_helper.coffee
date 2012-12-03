@@ -19,3 +19,13 @@ process.env.SECRET_TOKEN = 'secret_token'
 
 global.actionBase = require '..'
 
+_ = require 'underscore'
+pg = require('pg').native
+
+_.extend pg.defaults,
+  user:     process.env.TEST_PG_USER || 'action'
+  password: process.env.TEST_PG_PASSWORD || 'password'
+  host:     process.env.TEST_PG_HOST || 'localhost'
+  port:     process.env.TEST_PG_PORT || 5432
+  database: process.env.TEST_PG_DATABASE || 'action-base_test'
+
