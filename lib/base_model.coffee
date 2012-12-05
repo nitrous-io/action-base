@@ -33,6 +33,9 @@ BaseModel.findMany = (condition, values, columns, callback) ->
         callback null, null
 
 BaseModel.findOne = (condition, values, columns, callback) ->
+  if typeof columns == 'function'
+    callback = columns
+    columns = '*'
   this.findMany "#{condition} LIMIT 1", values, columns, (err, models) ->
     model = if models && models.length > 0
       models[0]

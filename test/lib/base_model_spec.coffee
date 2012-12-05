@@ -149,6 +149,11 @@ describe 'BaseModel', ->
       BaseModel.findOne 'id = $1', [123], ['foo', 'bar'], cbSpy
       expect(BaseModel.findMany).to.have.been.calledWith 'id = $1 LIMIT 1', [123], ['foo', 'bar']
 
+    context 'when given only 3 arguments', ->
+      it 'calls findMany with LIMIT 1 appended to condition and * as columns argument', ->
+        BaseModel.findOne 'id = $1', [123], cbSpy
+        expect(BaseModel.findMany).to.have.been.calledWith 'id = $1 LIMIT 1', [123], '*'
+
     context 'when findMany invokes callback with an error', ->
       error = null
 
