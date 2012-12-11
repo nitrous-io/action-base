@@ -6,7 +6,8 @@ module.exports = class SSHHelper
   constructor: (@user, @host, @port, @key) ->
 
   writeKeyFile: (callback) -> # callback(err, sshArgs, deleteKeyFile)
-    tmp.file (err, path) =>
+    tmp.file (err, path, fd) =>
+      fs.close(fd) if fd
       if err
         callback err
         return

@@ -27,16 +27,21 @@ describe 'SSHHelper', ->
         expect(cbSpy).to.have.been.calledWith err
 
     context 'when temp file is successfully created', ->
+      fdSpy = null
+
       beforeEach ->
         err = new Error
+        fdSpy = sinon.spy()
         sinon.stub tmp, 'file'
-        tmp.file.yields null, '/tmp/tmpfile'
+        tmp.file.yields null, '/tmp/tmpfile', fdSpy
         sinon.stub fs, 'unlink'
+        sinon.stub fs, 'close'
         fs.unlink.callsArg 1
 
       afterEach ->
         tmp.file.restore()
         fs.unlink.restore()
+        fs.close.restore()
 
       context 'when the key failed to be written to the temp file', ->
         beforeEach ->
@@ -48,6 +53,9 @@ describe 'SSHHelper', ->
 
         afterEach ->
           fs.writeFile.restore()
+
+        it 'closes the file descriptor', ->
+          expect(fs.close).to.have.been.calledWith fdSpy
 
         it 'deletes the temp file', ->
           expect(fs.unlink).to.have.been.called
@@ -65,6 +73,9 @@ describe 'SSHHelper', ->
 
         afterEach ->
           fs.writeFile.restore()
+
+        it 'closes the file descriptor', ->
+          expect(fs.close).to.have.been.calledWith fdSpy
 
         it 'makes a callback with ssh arguments as the first argument', ->
           expect(fs.writeFile).to.have.been.calledWith '/tmp/tmpfile', sshHelper.key
