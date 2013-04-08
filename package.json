@@ -8,7 +8,7 @@
 , "dependencies": {
     "coffee-script" : "1.x.x"
   , "underscore"    : "1.4.x"
-  , "pg"            : "1.0.x"
+  , "pg"            : "0.9.x"
   , "tmp"           : "0.0.x"
   }
 , "devDependencies": {
