@@ -73,10 +73,10 @@ describe 'BaseModel', ->
               done()
 
         context 'when a row that matches a given condition does not exist', ->
-          it 'returns a null object', (done) ->
+          it 'returns an empty array', (done) ->
             BaseModel.findMany 'id = $1', [123], (err, models) ->
               expect(err).to.be.null
-              expect(models).to.be.null
+              expect(models).to.deep.equal []
               done()
 
         context 'when rows that matches a given condition exists', ->

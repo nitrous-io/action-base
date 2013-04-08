@@ -30,7 +30,7 @@ BaseModel.findMany = (condition, values, columns, callback) ->
           model
         callback null, models
       else
-        callback null, null
+        callback null, []
 
 BaseModel.findOne = (condition, values, columns, callback) ->
   if typeof columns == 'function'
