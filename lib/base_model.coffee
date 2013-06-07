@@ -4,6 +4,13 @@ module.exports = class BaseModel
   constructor: (attributes) ->
     this[k] = v for own k, v of attributes
 
+BaseModel.testConnection = (callback) ->
+  pg.connect (err, client) ->
+    return callback(err) if err
+    client.query "SELECT 1", (err, res) ->
+      return callback(err) if err
+      callback null
+
 BaseModel.findMany = (condition, values, columns, callback) ->
   if typeof columns == 'function'
     callback = columns

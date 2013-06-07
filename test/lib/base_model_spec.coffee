@@ -10,6 +10,49 @@ describe 'BaseModel', ->
       expect(model.bar).to.equal 'B@R'
       expect(model.baz).to.equal 123
 
+  describe '.testConnection', ->
+    context 'when pg.connect fails', ->
+      error = null
+
+      beforeEach ->
+        error = new Error
+        sinon.stub pg, 'connect', (cb) ->
+          cb error, null
+
+      afterEach ->
+        pg.connect.restore()
+
+      it 'calls callback with error', (done) ->
+        BaseModel.testConnection (err) ->
+          expect(err).to.equal error
+          done()
+
+    context 'when pg.connect is successful', ->
+      context 'when query fails with error', ->
+        fakeClient = error = null
+
+        beforeEach ->
+          error = new Error
+          fakeClient = { query: -> }
+          sinon.stub fakeClient, 'query', (q, cb) ->
+            cb error, null
+          sinon.stub pg, 'connect', (cb) ->
+            cb null, fakeClient
+
+        afterEach ->
+          pg.connect.restore()
+
+        it 'calls callback with error', (done) ->
+          BaseModel.testConnection (err) ->
+            expect(err).to.equal error
+            done()
+
+      context 'when query succeeds', ->
+        it 'calls callback with null', (done) ->
+          BaseModel.testConnection (err) ->
+            expect(err).to.be.null
+            done()
+
   describe '.findMany', ->
     context 'when tableName property is defined', ->
       before (done) ->
