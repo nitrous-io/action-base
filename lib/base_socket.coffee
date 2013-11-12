@@ -4,7 +4,7 @@ module.exports = class BaseSocket extends EventEmitter
   namespace: 'base'
 
   constructor: (@connection) ->
-    this.initialize()
+    @initialize()
 
   initialize: ->
 

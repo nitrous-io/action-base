@@ -32,7 +32,7 @@ module.exports = class SSHHelper
         callback null, sshArgs, deleteKeyFile
 
   execCommand: (command, callback) -> # callback(err, stdout, stderr)
-    this.writeKeyFile (err, sshArgs, deleteKeyFile) ->
+    @writeKeyFile (err, sshArgs, deleteKeyFile) ->
       if err
         callback err
         return

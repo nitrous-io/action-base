@@ -15,7 +15,7 @@ BaseModel.findMany = (condition, values, columns, callback) ->
   if typeof columns == 'function'
     callback = columns
     columns = '*'
-  unless this.tableName
+  unless @tableName
     callback new Error('tableName not defined'), null
     return
   pg.connect (err, client) =>
@@ -43,7 +43,7 @@ BaseModel.findOne = (condition, values, columns, callback) ->
   if typeof columns == 'function'
     callback = columns
     columns = '*'
-  this.findMany "#{condition} LIMIT 1", values, columns, (err, models) ->
+  @findMany "#{condition} LIMIT 1", values, columns, (err, models) ->
     model = if models && models.length > 0
       models[0]
     else
@@ -53,7 +53,7 @@ BaseModel.findOne = (condition, values, columns, callback) ->
 BaseModel.findById = (id, columns, callback) ->
   if typeof columns == 'function'
     callback = columns
-    this.findOne 'id = $1', [id], callback
+    @findOne 'id = $1', [id], callback
   else
-    this.findOne 'id = $1', [id], columns, callback
+    @findOne 'id = $1', [id], columns, callback
 

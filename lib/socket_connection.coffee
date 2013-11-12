@@ -31,15 +31,15 @@ module.exports = class SocketConnection
 
     invokeCallback = (args=[]) =>
       if callbackId?
-        this._invokeCallback callbackId, args
+        @_invokeCallback callbackId, args
 
     if namespace == 'global' && event == 'auth'
       @userId = @authTokenVerifier.verify(args[0])
       if @userId?
         invokeCallback()
       else
-        this.close()
-    else if this.isAuthenticated()
+        @close()
+    else if @isAuthenticated()
       if event == 'init'
         if socketClass = @socketClasses[namespace]
           @sockets[namespace] = new socketClass this

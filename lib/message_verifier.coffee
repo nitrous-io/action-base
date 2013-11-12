@@ -8,7 +8,7 @@ module.exports = class MessageVerifier
     object = null
     if signed? && signed.length > 4
       [encodedJSON, signature] = signed.split('--')
-      mySig = this.signatureFor(encodedJSON)
+      mySig = @signatureFor(encodedJSON)
       if mySig == signature
         try
           json = new Buffer(encodedJSON, 'base64').toString('utf8')
@@ -20,7 +20,7 @@ module.exports = class MessageVerifier
   generate: (object) ->
     json = JSON.stringify(object)
     encodedJSON = new Buffer(json, 'utf8').toString('base64')
-    signature = this.signatureFor(encodedJSON)
+    signature = @signatureFor(encodedJSON)
     "#{encodedJSON}--#{signature}"
 
   signatureFor: (string) ->
