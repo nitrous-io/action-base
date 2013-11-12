@@ -28,4 +28,3 @@ _.extend pg.defaults,
   host:     process.env.TEST_PG_HOST || 'localhost'
   port:     process.env.TEST_PG_PORT || 5432
   database: process.env.TEST_PG_DATABASE || 'action-base_test'
-

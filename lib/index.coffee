@@ -1,9 +1,10 @@
-exports.BaseController = require './base_controller'
-exports.MessageVerifier = require './message_verifier'
-exports.routeTo = require './route_to'
-exports.SSHHelper = require './ssh_helper'
-exports.actionCipher = require './action_cipher'
-
-# don't require base model until needed
-exports.__defineGetter__ 'BaseModel', ->
-  require './base_model'
+# lazy load everything
+exports.__defineGetter__ 'BaseController'    , -> require './base_controller'
+exports.__defineGetter__ 'MessageVerifier'   , -> require './message_verifier'
+exports.__defineGetter__ 'routeTo'           , -> require './route_to'
+exports.__defineGetter__ 'SSHHelper'         , -> require './ssh_helper'
+exports.__defineGetter__ 'actionCipher'      , -> require './action_cipher'
+exports.__defineGetter__ 'BaseModel'         , -> require './base_model'
+exports.__defineGetter__ 'AuthTokenVerifier' , -> require './auth_token_verifier'
+exports.__defineGetter__ 'SocketConnection'  , -> require './socket_connection'
+exports.__defineGetter__ 'BaseSocket'        , -> require './base_socket'

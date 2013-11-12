@@ -6,4 +6,6 @@
 * routeTo
 * SSHHelper
 * actionCipher
-
+* AuthTokenVerifier
+* SocketConnection
+* BaseSocket

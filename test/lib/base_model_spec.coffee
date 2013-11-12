@@ -238,4 +238,3 @@ describe 'BaseModel', ->
       it 'selects all columns (*)', ->
         BaseModel.findById 123, cbSpy
         expect(BaseModel.findOne).to.have.been.calledWith 'id = $1', [123], cbSpy
-
