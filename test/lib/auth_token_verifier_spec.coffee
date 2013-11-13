@@ -59,3 +59,7 @@ describe 'AuthTokenVerifier', ->
 
       it 'returns null', ->
         expect(authTokenVerifier.verify token).to.be.null
+
+    context 'when token is undefined', ->
+      it 'returns null', ->
+        expect(authTokenVerifier.verify undefined).to.be.null

@@ -6,6 +6,7 @@ module.exports = class AuthTokenVerifier
   constructor: (@name, @messageVerifier) ->
 
   verify: (token) ->
+    return null unless token
     if verifiedToken = @messageVerifier.verify decodeURLSafeBase64(token)
       [userId, name, expiresAt] = verifiedToken
       now = Math.floor(+new Date / 1000)
