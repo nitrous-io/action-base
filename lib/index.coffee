@@ -9,3 +9,4 @@ exports.__defineGetter__ 'AuthTokenVerifier' , -> require './auth_token_verifier
 exports.__defineGetter__ 'SocketConnection'  , -> require './socket_connection'
 exports.__defineGetter__ 'BaseSocket'        , -> require './base_socket'
 exports.__defineGetter__ 'stringHelper'      , -> require './string_helper'
+exports.__defineGetter__ 'util'              , -> require './util'

@@ -1,13 +1,11 @@
-decodeURLSafeBase64 = (string) ->
-  string = string.replace(/-/g,'+').replace(/_/g, '/')
-  new Buffer(string, 'base64').toString('utf8')
+util = require './util'
 
 module.exports = class AuthTokenVerifier
   constructor: (@name, @messageVerifier) ->
 
   verify: (token) ->
     return null unless token
-    if verifiedToken = @messageVerifier.verify decodeURLSafeBase64(token)
+    if verifiedToken = @messageVerifier.verify util.decodeURLSafeBase64(token)
       [userId, name, expiresAt] = verifiedToken
       now = Math.floor(+new Date / 1000)
       if (name == @name) && (expiresAt > now)
