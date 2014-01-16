@@ -31,14 +31,20 @@ module.exports = class SSHHelper
             callback?()
         callback null, sshArgs, deleteKeyFile
 
-  execCommand: (command, callback) -> # callback(err, stdout, stderr)
+  execCommand: (command, options, callback) -> # callback(err, stdout, stderr)
+    if typeof options == 'function'
+      callback = options
+      options = {}
+
+    timeout = options?.timeout || 20000
+
     @writeKeyFile (err, sshArgs, deleteKeyFile) ->
       if err
         callback err
         return
       sshArgs.push("export LC_ALL=en_US.UTF-8; #{command}")
       try
-        childProcess.execFile '/usr/bin/ssh', sshArgs, timeout: 20000, (err, stdout, stderr) ->
+        childProcess.execFile '/usr/bin/ssh', sshArgs, timeout: timeout, (err, stdout, stderr) ->
           deleteKeyFile ->
             callback err, stdout, stderr
       catch err
