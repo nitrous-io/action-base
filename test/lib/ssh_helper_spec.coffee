@@ -131,21 +131,54 @@ describe 'SSHHelper', ->
           callback null, ['sshArg1', 'sshArg2'], deleteKeyFileSpy
         sinon.stub childProcess, 'execFile', (file, args, opts, cb) ->
           cb err, 'fake stdout', 'fake stderr'
-        sshHelper.execCommand 'ls', cbSpy
-        expect(sshHelper.writeKeyFile).to.have.been.called
 
       afterEach ->
         childProcess.execFile.restore()
 
-      it 'executes a given command', ->
-        expect(childProcess.execFile).to.have.been.called
-        expect(childProcess.execFile.args[0][0]).to.equal '/usr/bin/ssh'
-        expect(childProcess.execFile.args[0][1]).to.deep.equal ['sshArg1', 'sshArg2', 'export LC_ALL=en_US.UTF-8; ls']
-        expect(childProcess.execFile.args[0][2]).to.deep.equal { timeout: 20000 }
+      context 'when no options are provided', ->
+        beforeEach ->
+          sshHelper.execCommand 'ls', cbSpy
 
-      it 'calls deleteKeyFile function', ->
-        expect(deleteKeyFileSpy).to.have.been.called
+        it 'executes a given command with the default timeout', ->
+          expect(childProcess.execFile).to.have.been.called
+          expect(childProcess.execFile.args[0][0]).to.equal '/usr/bin/ssh'
+          expect(childProcess.execFile.args[0][1]).to.deep.equal ['sshArg1', 'sshArg2', 'export LC_ALL=en_US.UTF-8; ls']
+          expect(childProcess.execFile.args[0][2]).to.deep.equal { timeout: 20000 }
 
-      it 'makes a callback with given err, stdout, and stderr', ->
-        expect(cbSpy).to.have.been.calledWith err, 'fake stdout', 'fake stderr'
+        it 'calls deleteKeyFile function', ->
+          expect(deleteKeyFileSpy).to.have.been.called
 
+        it 'makes a callback with given err, stdout, and stderr', ->
+          expect(cbSpy).to.have.been.calledWith err, 'fake stdout', 'fake stderr'
+
+      context 'when options are null', ->
+        beforeEach ->
+          sshHelper.execCommand 'ls', null, cbSpy
+
+        it 'executes a given command with the default timeout', ->
+          expect(childProcess.execFile).to.have.been.called
+          expect(childProcess.execFile.args[0][0]).to.equal '/usr/bin/ssh'
+          expect(childProcess.execFile.args[0][1]).to.deep.equal ['sshArg1', 'sshArg2', 'export LC_ALL=en_US.UTF-8; ls']
+          expect(childProcess.execFile.args[0][2]).to.deep.equal { timeout: 20000 }
+
+        it 'calls deleteKeyFile function', ->
+          expect(deleteKeyFileSpy).to.have.been.called
+
+        it 'makes a callback with given err, stdout, and stderr', ->
+          expect(cbSpy).to.have.been.calledWith err, 'fake stdout', 'fake stderr'
+
+      context 'when options include a timeout option', ->
+        beforeEach ->
+          sshHelper.execCommand 'ls', { timeout: 40000 }, cbSpy
+
+        it 'executes a given command with the custom timeout', ->
+          expect(childProcess.execFile).to.have.been.called
+          expect(childProcess.execFile.args[0][0]).to.equal '/usr/bin/ssh'
+          expect(childProcess.execFile.args[0][1]).to.deep.equal ['sshArg1', 'sshArg2', 'export LC_ALL=en_US.UTF-8; ls']
+          expect(childProcess.execFile.args[0][2]).to.deep.equal { timeout: 40000 }
+
+        it 'calls deleteKeyFile function', ->
+          expect(deleteKeyFileSpy).to.have.been.called
+
+        it 'makes a callback with given err, stdout, and stderr', ->
+          expect(cbSpy).to.have.been.calledWith err, 'fake stdout', 'fake stderr'
