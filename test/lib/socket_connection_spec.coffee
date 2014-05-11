@@ -23,6 +23,19 @@ describe 'SocketConnection', ->
       connection.register TestSocket
       expect(connection.socketClasses.test).to.equal TestSocket
 
+  describe '#registerMany', ->
+    it 'registers the socket primary namespace', ->
+      expect(connection.socketClasses.primary).not.to.exist
+      connection.registerMany TestSocket, 'primary', 'ns1', 'ns2'
+      expect(connection.socketClasses.primary).to.equal TestSocket
+
+    it 'registers secondary namespaces', ->
+      expect(connection.socketClasses.ns1).not.to.exist
+      expect(connection.socketClasses.ns2).not.to.exist
+      connection.registerMany TestSocket, 'primary', 'ns1', 'ns2'
+      expect(connection.socketClasses.ns1).to.equal TestSocket
+      expect(connection.socketClasses.ns2).to.equal TestSocket
+
   describe '#close', ->
     it 'closes sockjs connection', ->
       connection.close()
@@ -161,6 +174,59 @@ describe 'SocketConnection', ->
 
               it 'does nothing', ->
                 expect(socket.emit).not.to.have.been.called
+                expect(connection._invokeCallback).not.to.have.been.called
+
+        context 'with multiple socket classes', ->
+          context 'when the action is "init"', ->
+            beforeEach ->
+              connection.registerMany TestSocket, 'primary', 'ns1'
+
+            context 'when authenticated', ->
+              beforeEach ->
+                sinon.stub(connection, 'isAuthenticated').returns true
+
+              context 'when receiving on primary namespace', ->
+                beforeEach ->
+                  connection._onData JSON.stringify(["primary", "init", null, 42])
+
+                it 'initializes a socket class', ->
+                  expect(connection.sockets.primary).to.be.an.instanceof TestSocket
+                  expect(connection.sockets.primary.connection).to.equal connection
+
+                it 'invokes callback', ->
+                  expect(connection._invokeCallback).to.have.been.calledWith 42, []
+
+              context 'when receiving on secondary namespace', ->
+                context 'when primary namespace inited', ->
+                  beforeEach ->
+                    connection._onData JSON.stringify(["primary", "init", null, 42])
+                    connection._onData JSON.stringify(["ns1", "init", null, 42])
+
+                  it 'initializes a socket class', ->
+                    expect(connection.sockets.ns1).to.be.an.instanceof TestSocket
+                    expect(connection.sockets.ns1.connection).to.equal connection
+
+                  it 'invokes callback', ->
+                    expect(connection._invokeCallback).to.have.been.calledWith 42, []
+
+                context 'when primary namespace not inited', ->
+                  beforeEach ->
+                    connection._onData JSON.stringify(["ns1", "init", null, 42])
+
+                  it 'initializes a socket class', ->
+                    expect(connection.sockets.ns1).to.be.an.instanceof TestSocket
+                    expect(connection.sockets.ns1.connection).to.equal connection
+
+                  it 'invokes callback', ->
+                    expect(connection._invokeCallback).to.have.been.calledWith 42, []
+
+            context 'when not authenticated', ->
+              beforeEach ->
+                sinon.stub(connection, 'isAuthenticated').returns false
+                connection._onData JSON.stringify(["test", "init", null, 42])
+
+              it 'does nothing', ->
+                expect(connection.sockets.test).not.to.exist
                 expect(connection._invokeCallback).not.to.have.been.called
 
         context 'with a non-registered socket class', ->

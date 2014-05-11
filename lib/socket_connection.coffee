@@ -5,11 +5,21 @@ module.exports = class SocketConnection
     @userId = null
     @socketClasses = {}
     @sockets = {}
-    @ws.on 'data',  _.bind(@_onData, this)
+    @primaryNamespace = {}
+    @ws.on 'data', _.bind(@_onData, this)
     @ws.on 'close', _.bind(@_onClose, this)
 
   register: (socketClass) ->
     @socketClasses[socketClass::namespace] = socketClass
+
+  # register multiple namespaces to one socketClass
+  # the primary namespace must be the first argument
+  registerMany: (socketClass, namespaces...) ->
+    primary = namespaces.shift()
+    @socketClasses[primary] = socketClass
+    _.each namespaces, (namespace) =>
+      @primaryNamespace[namespace] = primary
+      @socketClasses[namespace] = socketClass
 
   close: ->
     @ws?.close()
@@ -42,7 +52,13 @@ module.exports = class SocketConnection
     else if @isAuthenticated()
       if event == 'init'
         if socketClass = @socketClasses[namespace]
-          @sockets[namespace] = new socketClass this
+          if primary = @primaryNamespace[namespace]
+            # init on secondary namespace prior to primary will automatically init primary
+            if !@sockets[primary]
+              @sockets[primary] = new socketClass this
+            @sockets[namespace] = @sockets[primary]
+          else
+            @sockets[namespace] = new socketClass this
           invokeCallback()
       else if socket = @sockets[namespace]
         args.unshift event
