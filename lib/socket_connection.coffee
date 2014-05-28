@@ -5,7 +5,7 @@ module.exports = class SocketConnection
     @userId = null
     @socketClasses = {}
     @sockets = {}
-    @primaryNamespace = {}
+    @primaryNamespace = {} # maps secondary namespaces (keys) to primary namespace
     @ws.on 'data', _.bind(@_onData, this)
     @ws.on 'close', _.bind(@_onClose, this)
 
@@ -68,8 +68,9 @@ module.exports = class SocketConnection
 
   _onClose: ->
     @socketClasses = null
-    _.each @sockets, (socket) ->
-      socket.destroy?()
+    _.each @sockets, (socket, namespace) =>
+      if !@primaryNamespace[namespace]
+        socket.destroy?()
     @sockets = null
     @ws = null
 

@@ -1,3 +1,5 @@
+_ = require 'underscore'
+
 SocketConnection = actionBase.SocketConnection
 BaseSocket = actionBase.BaseSocket
 
@@ -248,15 +250,27 @@ describe 'SocketConnection', ->
   describe '#_onClose', ->
     testSocket = testSocket2 = null
 
-    beforeEach ->
+    it 'resets registered socket classes and initialized socket class instances', ->
       connection.socketClasses.test = TestSocket
       connection.socketClasses.test2 = TestSocket
       testSocket = connection.sockets.test = { destroy: sinon.spy() }
       testSocket2 = connection.sockets.test2 = { destroy: sinon.spy() }
+
       connection._onClose()
 
-    it 'resets registered socket classes and initialized socket class instances', ->
       expect(connection.socketClasses).not.to.exist
       expect(connection.sockets).not.to.exist
       expect(testSocket.destroy).to.have.been.called
       expect(testSocket2.destroy).to.have.been.called
+
+    it 'only destroys each primary socket once', ->
+      sinon.stub(connection, 'isAuthenticated').returns true
+      connection.registerMany TestSocket, 'primary', 'sec1', 'sec2'
+      _.each ['primary', 'sec1', 'sec2'], (namespace) ->
+        connection._onData JSON.stringify([namespace, "init", null, 42])
+
+      destroySpy = sinon.spy connection.sockets.primary, 'destroy'
+
+      connection._onClose()
+
+      expect(destroySpy.callCount).to.eq 1
